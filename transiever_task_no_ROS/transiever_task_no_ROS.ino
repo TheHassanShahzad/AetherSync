@@ -1,8 +1,23 @@
+//constrict to only use 1 core
+#if CONFIG_FREERTOS_UNICORE
+static const BaseType_t app_cpu = 0;
+#else
+static const BaseType_t app_cpu = 1;
+#endif
+
 #include <WiFi.h>
 #include <esp_now.h>
-//
-//bool buttonDown = false;
-//bool ledOn = false;
+
+
+void task1(void *paramater){
+  
+  int led_delay_temp;
+  while(1){
+    broadcast("im new esp");
+    delay(500);
+  }
+  
+}
 
 void formatMacAddress(const uint8_t *macAddr, char *buffer, int maxLength)
 {
@@ -22,16 +37,7 @@ void receiveCallback(const uint8_t *macAddr, const uint8_t *data, int dataLen)
   formatMacAddress(macAddr, macStr, 18);
   // debug log the message to the serial port
   Serial.printf("Received message from: %s - %s\n", macStr, buffer);
-  // what are our instructions
-//  if (strcmp("on", buffer) == 0)
-//  {
-//    ledOn = true;
-//  }
-//  else
-//  {
-//    ledOn = false;
-//  }
-//  digitalWrite(2, ledOn);
+
 }
 
 // callback when data is sent
@@ -39,10 +45,7 @@ void sentCallback(const uint8_t *macAddr, esp_now_send_status_t status)
 {
   char macStr[18];
   formatMacAddress(macAddr, macStr, 18);
-//  Serial.print("Last Packet Sent to: ");
-//  Serial.println(macStr);
-//  Serial.print("Last Packet Send Status: ");
-//  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+
 }
 
 void broadcast(const String &message)
@@ -56,49 +59,20 @@ void broadcast(const String &message)
     esp_now_add_peer(&peerInfo);
   }
   esp_err_t result = esp_now_send(broadcastAddress, (const uint8_t *)message.c_str(), message.length());
-  // and this will send a message to a specific device
-  /*uint8_t peerAddress[] = {0x3C, 0x71, 0xBF, 0x47, 0xA5, 0xC0};
-  esp_now_peer_info_t peerInfo = {};
-  memcpy(&peerInfo.peer_addr, peerAddress, 6);
-  if (!esp_now_is_peer_exist(peerAddress))
-  {
-    esp_now_add_peer(&peerInfo);
-  }
-  esp_err_t result = esp_now_send(peerAddress, (const uint8_t *)message.c_str(), message.length());*/
-//  if (result == ESP_OK)
-//  {
-//    Serial.println("Broadcast message success");
-//  }
-//  else if (result == ESP_ERR_ESPNOW_NOT_INIT)
-//  {
-//    Serial.println("ESPNOW not Init.");
-//  }
-//  else if (result == ESP_ERR_ESPNOW_ARG)
-//  {
-//    Serial.println("Invalid Argument");
-//  }
-//  else if (result == ESP_ERR_ESPNOW_INTERNAL)
-//  {
-//    Serial.println("Internal Error");
-//  }
-//  else if (result == ESP_ERR_ESPNOW_NO_MEM)
-//  {
-//    Serial.println("ESP_ERR_ESPNOW_NO_MEM");
-//  }
-//  else if (result == ESP_ERR_ESPNOW_NOT_FOUND)
-//  {
-//    Serial.println("Peer not found.");
-//  }
-//  else
-//  {
-//    Serial.println("Unknown error");
-//  }
+ 
+
 }
+
+
+static TaskHandle_t task_1 = NULL;
+
 
 void setup()
 {
   Serial.begin(115200);
   delay(1000);
+ 
+    
   //Set device in STA mode to begin with
   WiFi.mode(WIFI_STA);
   Serial.println("ESPNow Example");
@@ -120,13 +94,19 @@ void setup()
     delay(3000);
     ESP.restart();
   }
-  // use the built in button
-//  pinMode(0, INPUT_PULLUP);
-//  pinMode(2, OUTPUT);
+  
+  xTaskCreatePinnedToCore(
+    task1,
+    "broadcast string",
+    4096,
+    NULL,
+    1,
+    &task_1,
+    app_cpu);
+    
 }
 
 void loop()
 {
-  broadcast("im new esp");
-  delay(500);
+
 }

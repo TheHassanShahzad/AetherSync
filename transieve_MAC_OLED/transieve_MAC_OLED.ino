@@ -8,7 +8,7 @@
 #include <micro_ros_utilities/string_utilities.h>
 #include <micro_ros_utilities/type_utilities.h>
 #include <std_msgs/msg/string.h>
-
+#include <WiFi.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -36,7 +36,7 @@ rcl_timer_t timer;
 #define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){}}
 
 String string_sub; //this is the data it wants to send out. it gets this by subscribing to /mouth
-String string_pub = "lol"; //this is the data it has retrieved from surrounding robots. this data will be published to /ear
+String string_pub = WiFi.macAddress(); //this is the data it has retrieved from surrounding robots. this data will be published to /ear
 
 void error_loop(){
   while(1){
